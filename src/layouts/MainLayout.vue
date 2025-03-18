@@ -1,102 +1,127 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="hHh lpR fFf">
+    <!-- En-tête -->
     <q-header elevated>
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+        <!-- Bouton pour ouvrir/fermer le menu latéral -->
 
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <q-toolbar-title>Arca Musica</q-toolbar-title>
+        <q-btn flat round icon="menu" @click="drawer = !drawer" />
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
+    <!-- Menu latéral (drawer) sur le côté droit -->
+    <q-drawer v-model="drawer" side="right" bordered>
       <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
+        <q-item-label header class="q-pa-md">Menu</q-item-label>
+        <q-item v-for="link in linksList" :key="link.title" clickable @click="goTo(link.link)">
+          <q-item-section avatar>
+            <q-icon :name="link.icon" />
+          </q-item-section>
+          <q-item-section>{{ link.title }}</q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
+    <!-- Contenu principal -->
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <q-page-sticky position="bottom-right" :offset="[20, 16]">
+      <q-fab icon="add" color="primary" vertical-actions-align="right" direction="up">
+        <!-- Boutons du menu avec icône + texte -->
+        <q-fab-action
+          v-for="action in actionsList"
+          :key="action.title"
+          :icon="action.icon"
+          :label="action.title"
+          color="primary"
+          fab-mini
+          @click="handleAction(action)"
+        />
+      </q-fab>
+    </q-page-sticky>
+    <!-- Modal pour "Ajouter un élève" -->
+    <q-dialog v-model="showStudentModal">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Ajouter un nouvel élève</div>
+          <!-- Ici, insérez le formulaire ou le contenu nécessaire -->
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Annuler" @click="showStudentModal = false" />
+          <q-btn flat label="Ajouter" @click="submitNewStudent" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Modal pour "Nouvelle facture" (exemple) -->
+    <q-dialog v-model="showInvoiceModal">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">Créer une nouvelle facture</div>
+          <!-- Contenu ou formulaire de la facture -->
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Annuler" @click="showInvoiceModal = false" />
+          <q-btn flat label="Enregistrer" @click="submitNewInvoice" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
+import { useRouter } from 'vue-router'
+
+const drawer = ref(false)
+const router = useRouter()
+const showStudentModal = ref(false)
+const showInvoiceModal = ref(false)
 
 const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
+  { title: 'Accueil', icon: 'dashboard', link: '/' },
+  { title: 'Elèves', icon: 'people', link: '/students' },
+  { title: 'Professeurs', icon: 'school', link: '/staff' },
+  { title: 'Factures', icon: 'attach_money', link: '/invoices' },
+  { title: 'Calendrier', icon: 'event', link: '/calendar' },
+  { title: 'Ressources', icon: 'language', link: '/resources' },
+  { title: 'Budget', icon: 'account_balance', link: '/expenses' },
+  { title: 'Paramètres', icon: 'settings', link: '/settings' },
 ]
 
-const leftDrawerOpen = ref(false)
+const actionsList = [
+  { title: 'Nouvel élève', icon: 'person_add', action: 'addStudent' },
+  { title: 'Nouvelle facture', icon: 'attach_money', action: 'addInvoice' },
+]
 
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value
+function handleAction(action) {
+  if (action.action === 'addStudent') {
+    showStudentModal.value = true
+  } else if (action.action === 'addInvoice') {
+    showInvoiceModal.value = true
+  }
+}
+function submitNewStudent() {
+  // Logique pour ajouter un nouvel élève
+  console.log('Nouvel élève ajouté')
+  showStudentModal.value = false
+}
+
+function submitNewInvoice() {
+  // Logique pour créer une nouvelle facture
+  console.log('Nouvelle facture créée')
+  showInvoiceModal.value = false
+}
+
+function goTo(route) {
+  router.push(route)
+  drawer.value = false
 }
 </script>
+
+<style scoped>
+/* Vous pouvez ajouter des styles spécifiques ici si besoin */
+</style>
