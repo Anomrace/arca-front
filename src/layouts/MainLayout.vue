@@ -5,7 +5,7 @@
       <q-toolbar>
         <!-- Bouton pour ouvrir/fermer le menu latéral -->
 
-        <q-toolbar-title>Arca Musica</q-toolbar-title>
+        <ToolbarTitle />
         <q-btn flat round icon="menu" @click="drawer = !drawer" />
       </q-toolbar>
     </q-header>
@@ -14,7 +14,7 @@
     <q-drawer v-model="drawer" side="right" bordered>
       <q-list>
         <q-item-label header class="q-pa-md">Menu</q-item-label>
-        <q-item v-for="link in linksList" :key="link.title" clickable @click="goTo(link.link)">
+        <q-item v-for="link in linksList" :key="link.title" clickable @click="goTo(link)">
           <q-item-section avatar>
             <q-icon :name="link.icon" />
           </q-item-section>
@@ -75,7 +75,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-
+import ToolbarTitle from 'src/components/ToolbarTitle.vue'
+import useAuth from 'src/composables/useAuth'
+const { logout } = useAuth()
 const drawer = ref(false)
 const router = useRouter()
 const showStudentModal = ref(false)
@@ -90,6 +92,7 @@ const linksList = [
   { title: 'Ressources', icon: 'language', link: '/resources' },
   { title: 'Budget', icon: 'account_balance', link: '/expenses' },
   { title: 'Paramètres', icon: 'settings', link: '/settings' },
+  { title: 'Déconnexion', icon: 'logout', action: 'logout' },
 ]
 
 const actionsList = [
@@ -116,8 +119,12 @@ function submitNewInvoice() {
   showInvoiceModal.value = false
 }
 
-function goTo(route) {
-  router.push(route)
+function goTo(linkOrAction) {
+  if (linkOrAction.action === 'logout') {
+    logout()
+  } else {
+    router.push(linkOrAction.link)
+  }
   drawer.value = false
 }
 </script>
