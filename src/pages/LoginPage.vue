@@ -36,7 +36,7 @@
             autocomplete="current-password"
           />
 
-          <!-- Prénom / Nom (si enregistrement) -->
+          <!-- Prénom / Nom (si inscription) -->
           <q-input
             v-if="tab === 'register'"
             v-model="credentials.firstName"
@@ -70,16 +70,18 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-
+import { useRouter } from 'vue-router'
 import { Dialog } from 'quasar'
+
 import ToolbarTitle from 'src/components/ToolbarTitle.vue'
-import useAuth from 'src/composables/useAuth'
+import { useAuthStore } from 'src/stores/auth'
+
+const auth = useAuthStore()
+const router = useRouter()
 
 const tab = ref('login')
-const { login, register } = useAuth()
-const submitButtonTitle = computed(() => {
-  return tab.value === 'login' ? 'Se connecter' : "S'enregistrer"
-})
+
+const submitButtonTitle = computed(() => (tab.value === 'login' ? 'Se connecter' : "S'enregistrer"))
 
 const credentials = reactive({
   email: '',
@@ -97,26 +99,58 @@ const submitForm = async () => {
     })
   }
 
-  if (tab.value === 'register') {
-    if (!credentials.firstName || !credentials.lastName) {
-      return Dialog.create({
-        type: 'negative',
-        title: 'Erreur',
-        message: 'Prénom et nom requis pour vous enregistrer',
+  try {
+    let success = false
+
+    if (tab.value === 'register') {
+      if (!credentials.firstName || !credentials.lastName) {
+        return Dialog.create({
+          type: 'negative',
+          title: 'Erreur',
+          message: 'Prénom et nom requis pour vous enregistrer',
+        })
+      }
+
+      success = await auth.register({
+        email: credentials.email,
+        password: credentials.password,
+        firstName: credentials.firstName,
+        lastName: credentials.lastName,
+        role: 'student', // valeur par défaut ici
+      })
+    } else {
+      success = await auth.login({
+        email: credentials.email,
+        password: credentials.password,
       })
     }
 
-    await register({
-      email: credentials.email,
-      password: credentials.password,
-      firstName: credentials.firstName,
-      lastName: credentials.lastName,
-      role: 'student',
-    })
-  } else {
-    await login({
-      email: credentials.email,
-      password: credentials.password,
+    if (success) {
+      Dialog.create({
+        type: 'positive',
+        title: 'Succès',
+        message: 'Connexion réussie',
+      })
+
+      // 🔥 Redirection par rôle (à lire dans user_metadata)
+      const role = auth.user?.user_metadata?.role || 'student'
+
+      const redirectByRole = {
+        admin: '/dashboard-admin',
+        student: '/dashboard-student',
+        professor: '/dashboard-professor',
+        parent: '/dashboard-parent',
+      }
+
+      router.push(redirectByRole[role] || '/')
+    } else {
+      throw new Error('Échec de connexion ou utilisateur introuvable')
+    }
+  } catch (err) {
+    Dialog.create({
+      type: 'negative',
+      title: 'Erreur',
+      message: err?.message || 'Erreur de connexion',
     })
   }
 }

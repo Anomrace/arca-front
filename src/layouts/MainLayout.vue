@@ -6,6 +6,9 @@
         <!-- Bouton pour ouvrir/fermer le menu latéral -->
 
         <ToolbarTitle />
+        <q-toolbar-title>
+          Bienvenue {{ auth.user?.firstName || 'Utilisateur' }} ({{ auth.user?.role }})
+        </q-toolbar-title>
         <q-btn flat round icon="menu" @click="drawer = !drawer" />
       </q-toolbar>
     </q-header>
@@ -77,11 +80,17 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ToolbarTitle from 'src/components/ToolbarTitle.vue'
 import useAuth from 'src/composables/useAuth'
-const { logout } = useAuth()
+import { useAuthStore } from 'src/stores/auth'
+import { onMounted } from 'vue'
+
+const auth = useAuthStore()
+const { user } = useAuth()
 const drawer = ref(false)
 const router = useRouter()
 const showStudentModal = ref(false)
 const showInvoiceModal = ref(false)
+
+console.log(user)
 
 const linksList = [
   { title: 'Accueil', icon: 'dashboard', link: '/' },
@@ -121,12 +130,15 @@ function submitNewInvoice() {
 
 function goTo(linkOrAction) {
   if (linkOrAction.action === 'logout') {
-    logout()
+    localStorage.removeItem('token')
+    router.push('/auth')
   } else {
     router.push(linkOrAction.link)
   }
-  drawer.value = false
 }
+onMounted(() => {
+  auth.fetchUser()
+})
 </script>
 
 <style scoped>

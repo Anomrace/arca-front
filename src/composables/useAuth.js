@@ -1,50 +1,51 @@
-// src/composables/useAuth.js
-import { useRouter } from 'vue-router'
-import { Dialog } from 'quasar'
+import { ref } from 'vue'
+
 import { api } from 'boot/axios'
 
+const user = ref(null)
+
+function decodeToken(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload
+  } catch (error) {
+    console.log(error)
+    return null
+  }
+}
+
+function setUserFromToken() {
+  const token = localStorage.getItem('token')
+  if (token) {
+    user.value = decodeToken(token)
+  } else {
+    user.value = null
+  }
+}
+
+async function login(payload) {
+  const res = await api.post('/auth/login', payload)
+  const token = res.data.token
+  localStorage.setItem('token', token)
+  setUserFromToken()
+  return res.data // renvoie pour gestion dans le composant
+}
+
+async function register(payload) {
+  const res = await api.post('/auth/register', payload)
+  const token = res.data.token
+  localStorage.setItem('token', token)
+  setUserFromToken()
+  return res.data
+}
+
+setUserFromToken()
+
 export default function useAuth() {
-  const router = useRouter()
-
-  const login = async (credentials) => {
-    try {
-      const { data } = await api.post('/auth/login', credentials)
-      localStorage.setItem('token', data.token)
-      Dialog.create({ type: 'positive', message: 'Connexion réussie' })
-      router.push('/')
-    } catch (err) {
-      Dialog.create({
-        type: 'negative',
-        message: err.response?.data?.message || 'Erreur de connexion',
-      })
-    }
-  }
-
-  const register = async (userData) => {
-    try {
-      const { data } = await api.post('/auth/register', userData)
-      localStorage.setItem('token', data.token)
-      Dialog.create({ type: 'positive', message: 'Inscription réussie' })
-      router.push('/')
-    } catch (err) {
-      Dialog.create({
-        type: 'negative',
-        message: err.response?.data?.message || 'Erreur lors de l’inscription',
-      })
-    }
-  }
-
-  const logout = () => {
-    localStorage.removeItem('token')
-    router.push('/auth')
-  }
-
-  const isAuthenticated = () => !!localStorage.getItem('token')
-
   return {
+    user,
     login,
     register,
-    logout,
-    isAuthenticated,
+    setUserFromToken,
   }
 }
