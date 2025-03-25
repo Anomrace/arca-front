@@ -81,17 +81,15 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ToolbarTitle from 'src/components/ToolbarTitle.vue'
-import useAuth from 'src/composables/useAuth'
 import { useAuthStore } from 'src/stores/auth'
 
 const auth = useAuthStore()
-const { user } = useAuth()
 const drawer = ref(false)
 const router = useRouter()
 const showStudentModal = ref(false)
 const showInvoiceModal = ref(false)
 
-console.log(user)
+console.log(auth.user)
 
 const linksList = [
   { title: 'Accueil', icon: 'dashboard', link: '/' },
@@ -117,21 +115,20 @@ function handleAction(action) {
     showInvoiceModal.value = true
   }
 }
+
 function submitNewStudent() {
-  // Logique pour ajouter un nouvel élève
   console.log('Nouvel élève ajouté')
   showStudentModal.value = false
 }
 
 function submitNewInvoice() {
-  // Logique pour créer une nouvelle facture
   console.log('Nouvelle facture créée')
   showInvoiceModal.value = false
 }
 
 function goTo(linkOrAction) {
   if (linkOrAction.action === 'logout') {
-    localStorage.removeItem('token')
+    auth.logout()
     router.push('/auth')
   } else {
     router.push(linkOrAction.link)
