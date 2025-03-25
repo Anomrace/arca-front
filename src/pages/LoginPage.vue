@@ -130,6 +130,9 @@ const submitForm = async () => {
 
     const role = auth.user.user_metadata?.role || 'student'
 
+    console.log('🚀 redirecting to role:', role)
+    console.log('👤 auth.user:', auth.user)
+    console.log('➡️ path:', path)
     const redirectByRole = {
       admin: '/dashboard-admin',
       student: '/dashboard-student',
