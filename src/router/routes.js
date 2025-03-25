@@ -92,7 +92,10 @@ const routes = [
     path: '/unauthorized',
     component: () => import('pages/UnauthorizedPage.vue'),
   },
-
+  {
+    path: '/',
+    redirect: '/auth',
+  },
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue'),
