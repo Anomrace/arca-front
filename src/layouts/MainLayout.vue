@@ -7,7 +7,9 @@
 
         <ToolbarTitle />
         <q-toolbar-title>
-          Bienvenue {{ auth.user?.firstName || 'Utilisateur' }} ({{ auth.user?.role }})
+          Bienvenue {{ auth.user?.user_metadata?.firstName || 'Utilisateur' }} ({{
+            auth.user?.user_metadata?.role
+          }})
         </q-toolbar-title>
         <q-btn flat round icon="menu" @click="drawer = !drawer" />
       </q-toolbar>
@@ -81,7 +83,6 @@ import { useRouter } from 'vue-router'
 import ToolbarTitle from 'src/components/ToolbarTitle.vue'
 import useAuth from 'src/composables/useAuth'
 import { useAuthStore } from 'src/stores/auth'
-import { onMounted } from 'vue'
 
 const auth = useAuthStore()
 const { user } = useAuth()
@@ -136,9 +137,6 @@ function goTo(linkOrAction) {
     router.push(linkOrAction.link)
   }
 }
-onMounted(() => {
-  auth.fetchUser()
-})
 </script>
 
 <style scoped>

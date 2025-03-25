@@ -18,11 +18,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register({ email, password, firstName, lastName, role = 'admin' }) {
+    const isProd = import.meta.env.MODE === 'production'
+
+    const redirectUrl = isProd ? 'https://arcaapp.netlify.app/' : 'http://localhost:9000/'
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: 'http://localhost:9000/auth?confirmed=true', // facultatif mais propre
+        emailRedirectTo: `${redirectUrl}?confirmed=true`,
         data: {
           firstName: firstName || '',
           lastName: lastName || '',
@@ -35,11 +39,6 @@ export const useAuthStore = defineStore('auth', () => {
     console.log('🔴 register → error:', error)
 
     if (error) throw error
-
-    // 🔄 recharge les infos utilisateur après inscription
-    const { data: userData } = await supabase.auth.getUser()
-    user.value = userData?.user || null
-
     return true
   }
 
