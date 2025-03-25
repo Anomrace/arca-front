@@ -55,8 +55,12 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     }
 
     // 3. Empêcher d'accéder à /auth ou /login si on est déjà connecté
+    // if (to.path.startsWith('/auth') && auth.user) {
+    //   return next(`/dashboard-${auth.user.role || 'student'}`)
+    // }
     if (to.path.startsWith('/auth') && auth.user) {
-      return next(`/dashboard-${auth.user.role || 'student'}`)
+      const role = auth.user.user_metadata?.role || 'student'
+      return next(`/dashboard-${role}`)
     }
 
     // 4. Vérification des rôles si la route en exige

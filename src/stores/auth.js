@@ -12,19 +12,21 @@ export const useAuthStore = defineStore('auth', () => {
     console.log('🔴 login → error:', error)
 
     if (error) throw error
-    user.value = data.user
+
+    await fetchUser() // 💡 recharge avec metadata complet
     return true
   }
 
-  async function register({ email, password, firstName, lastName, role }) {
+  async function register({ email, password, firstName, lastName, role = 'admin' }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: 'http://localhost:9000/auth?confirmed=true', // facultatif mais propre
         data: {
-          firstName,
-          lastName,
-          role, // 💡 stocké dans user_metadata
+          firstName: firstName || '',
+          lastName: lastName || '',
+          role: role || 'admin',
         },
       },
     })
@@ -33,7 +35,11 @@ export const useAuthStore = defineStore('auth', () => {
     console.log('🔴 register → error:', error)
 
     if (error) throw error
-    user.value = data.user
+
+    // 🔄 recharge les infos utilisateur après inscription
+    const { data: userData } = await supabase.auth.getUser()
+    user.value = userData?.user || null
+
     return true
   }
 

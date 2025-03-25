@@ -37,12 +37,11 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const links = [
-  { title: 'Calendrier', icon: 'event', link: '/calendar' },
-  { title: 'Ressources', icon: 'language', link: '/resources' },
-  { title: 'Paramètres', icon: 'settings', link: '/settings' },
+  { title: 'Calendrier', icon: 'event', link: '/dashboard-student/calendar' },
+  { title: 'Ressources', icon: 'language', link: '/dashboard-student/resources' },
+  { title: 'Paramètres', icon: 'settings', link: '/dashboard-student/settings' },
   { title: 'Déconnexion', icon: 'logout', action: 'logout' },
 ]
-
 function goTo(link) {
   if (link.action === 'logout') {
     auth.logout()

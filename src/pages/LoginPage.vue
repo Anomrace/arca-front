@@ -69,16 +69,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Dialog } from 'quasar'
-
+import { useRoute } from 'vue-router'
 import ToolbarTitle from 'src/components/ToolbarTitle.vue'
 import { useAuthStore } from 'src/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 
+const route = useRoute()
 const tab = ref('login')
 
 const submitButtonTitle = computed(() => (tab.value === 'login' ? 'Se connecter' : "S'enregistrer"))
@@ -100,8 +101,6 @@ const submitForm = async () => {
   }
 
   try {
-    let success = false
-
     if (tab.value === 'register') {
       if (!credentials.firstName || !credentials.lastName) {
         return Dialog.create({
@@ -111,41 +110,58 @@ const submitForm = async () => {
         })
       }
 
-      success = await auth.register({
+      // ✅ Inscription : ne pas tenter de rediriger, l'utilisateur n’est pas encore connecté
+      await auth.register({
         email: credentials.email,
         password: credentials.password,
         firstName: credentials.firstName,
         lastName: credentials.lastName,
-        role: 'student', // valeur par défaut ici
+        role: 'admin',
       })
-    } else {
-      success = await auth.login({
-        email: credentials.email,
-        password: credentials.password,
+
+      return Dialog.create({
+        type: 'info',
+        title: 'Confirmation requise',
+        message:
+          'Un email de confirmation a été envoyé. Veuillez vérifier votre boîte de réception.',
       })
     }
 
-    if (success) {
-      Dialog.create({
-        type: 'positive',
-        title: 'Succès',
-        message: 'Connexion réussie',
-      })
+    // ✅ Connexion
+    const success = await auth.login({
+      email: credentials.email,
+      password: credentials.password,
+    })
 
-      // 🔥 Redirection par rôle (à lire dans user_metadata)
-      const role = auth.user?.user_metadata?.role || 'student'
-
-      const redirectByRole = {
-        admin: '/dashboard-admin',
-        student: '/dashboard-student',
-        professor: '/dashboard-professor',
-        parent: '/dashboard-parent',
-      }
-
-      router.push(redirectByRole[role] || '/')
-    } else {
-      throw new Error('Échec de connexion ou utilisateur introuvable')
+    if (!success) {
+      throw new Error('Échec de connexion')
     }
+
+    await auth.fetchUser()
+
+    if (!auth.user) {
+      throw new Error('Utilisateur introuvable après connexion')
+    }
+
+    const role = auth.user?.user_metadata?.role || 'student'
+
+    const redirectByRole = {
+      admin: '/dashboard-admin',
+      student: '/dashboard-student',
+      professor: '/dashboard-professor',
+      parent: '/dashboard-parent',
+    }
+
+    const path = redirectByRole[role] || '/'
+    console.log('🔁 redirection vers', path)
+
+    Dialog.create({
+      type: 'positive',
+      title: 'Succès',
+      message: 'Connexion réussie',
+    })
+
+    router.push(path)
   } catch (err) {
     Dialog.create({
       type: 'negative',
@@ -154,4 +170,30 @@ const submitForm = async () => {
     })
   }
 }
+
+onMounted(
+  async () => {
+    if (route.query.confirmed === 'true') {
+      await auth.fetchUser()
+
+      Dialog.create({
+        type: 'positive',
+        title: 'Email confirmé',
+        message:
+          'Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.',
+      })
+    }
+  },
+
+  () => {
+    if (route.query.confirmed === 'true') {
+      Dialog.create({
+        type: 'positive',
+        title: 'Email confirmé',
+        message:
+          'Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.',
+      })
+    }
+  },
+)
 </script>
