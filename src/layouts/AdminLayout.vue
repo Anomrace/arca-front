@@ -1,8 +1,7 @@
-<!-- src/layouts/AdminLayout.vue -->
 <template>
-  <MainLayout />
+  <q-layout view="hHh lpR fFf">
+    <q-page-container>
+      <router-view />
+    </q-page-container>
+  </q-layout>
 </template>
-
-<script setup>
-import MainLayout from './MainLayout.vue'
-</script>
