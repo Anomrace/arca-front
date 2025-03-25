@@ -64,8 +64,8 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     }
 
     // 4. Vérification des rôles si la route en exige
-    if (to.meta.roles && !to.meta.roles.includes(auth.user?.role)) {
-      return next('/unauthorized') // à créer si besoin
+    if (to.meta.roles && !to.meta.roles.includes(auth.user?.user_metadata?.role)) {
+      return next('/unauthorized')
     }
 
     // ✅ OK, accès autorisé

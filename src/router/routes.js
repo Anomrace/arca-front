@@ -9,43 +9,54 @@ const routes = [
         component: () => import('pages/dashboard/AdminDashboard.vue'),
         meta: { requiresAuth: true, roles: ['admin'] },
       },
-      {
-        path: 'students',
-        component: () => import('pages/StudentsPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'staff',
-        component: () => import('pages/StaffPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'invoices',
-        component: () => import('pages/InvoicesPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'calendar',
-        component: () => import('pages/CalendarPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'resources',
-        component: () => import('pages/ResourcesPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'expenses',
-        component: () => import('pages/ExpensesPage.vue'),
-        meta: { requiresAuth: true },
-      },
-      {
-        path: 'settings',
-        component: () => import('pages/SettingsPage.vue'),
-        meta: { requiresAuth: true },
-      },
     ],
   },
+  // {
+  //   path: '/dashboard-admin',
+  //   component: () => import('layouts/AdminLayout.vue'),
+  //   children: [
+  //     {
+  //       path: '',
+  //       component: () => import('pages/dashboard/AdminDashboard.vue'),
+  //       meta: { requiresAuth: true, roles: ['admin'] },
+  //     },
+  //     {
+  //       path: 'students',
+  //       component: () => import('pages/StudentsPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //     {
+  //       path: 'staff',
+  //       component: () => import('pages/StaffPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //     {
+  //       path: 'invoices',
+  //       component: () => import('pages/InvoicesPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //     {
+  //       path: 'calendar',
+  //       component: () => import('pages/CalendarPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //     {
+  //       path: 'resources',
+  //       component: () => import('pages/ResourcesPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //     {
+  //       path: 'expenses',
+  //       component: () => import('pages/ExpensesPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //     {
+  //       path: 'settings',
+  //       component: () => import('pages/SettingsPage.vue'),
+  //       meta: { requiresAuth: true },
+  //     },
+  //   ],
+  // },
   {
     path: '/dashboard-professor',
     component: () => import('layouts/ProfessorLayout.vue'),
