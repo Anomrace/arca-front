@@ -1,7 +1,8 @@
 <template>
-  <MainLayout />
+  <q-layout view="hHh lpR fFf">
+    <!-- header / drawer / container etc -->
+    <q-page-container>
+      <router-view />
+    </q-page-container>
+  </q-layout>
 </template>
-
-<script setup>
-import MainLayout from './MainLayout.vue'
-</script>

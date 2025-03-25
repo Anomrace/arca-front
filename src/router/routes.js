@@ -3,14 +3,16 @@ const routes = [
   {
     path: '/dashboard-admin',
     component: () => import('layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] },
     children: [
       {
         path: '',
         component: () => import('pages/dashboard/AdminDashboard.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] },
       },
+      // ... autres routes enfants
     ],
   },
+
   // {
   //   path: '/dashboard-admin',
   //   component: () => import('layouts/AdminLayout.vue'),

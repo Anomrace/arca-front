@@ -137,13 +137,15 @@ const submitForm = async () => {
       parent: '/dashboard-parent',
     }
 
+    const path = redirectByRole[role] || '/'
+    console.log('🚀 Redirection vers :', path)
+
     Dialog.create({
       type: 'positive',
       title: 'Connexion réussie',
-      message: `Bienvenue, redirection vers votre tableau de bord (${role})`,
+      message: `Bienvenue ${auth.user.user_metadata?.firstName || ''} !`,
     })
 
-    const path = redirectByRole[role] || '/'
     router.push(path)
   } catch (err) {
     Dialog.create({
@@ -159,12 +161,10 @@ const submitForm = async () => {
 onMounted(async () => {
   if (route.query.confirmed === 'true') {
     await auth.fetchUser()
-
     Dialog.create({
       type: 'positive',
       title: 'Email confirmé',
-      message:
-        'Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.',
+      message: 'Votre adresse email a été vérifiée. Vous pouvez vous connecter.',
     })
   }
 })
