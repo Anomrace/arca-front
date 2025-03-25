@@ -6,51 +6,55 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const isLoading = ref(false)
 
-  // ✅ LOGIN
+  // ✅ Connexion
   async function login({ email, password }) {
     isLoading.value = true
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    console.log('🟢 login → data:', data)
-    console.log('🔴 login → error:', error)
     isLoading.value = false
 
     if (error) throw error
 
     user.value = data.user
+
+    // 🔧 Si le rôle est absent, on le fixe
+    if (!user.value?.user_metadata?.role) {
+      await updateUserRole('admin')
+    }
+
     return true
   }
 
-  // ✅ REGISTER (admin par défaut)
+  // ✅ Inscription (admin par défaut)
   async function register({ email, password, firstName, lastName, role = 'admin' }) {
     const isProd = import.meta.env.MODE === 'production'
+
     const redirectUrl = isProd ? 'https://arcaapp.netlify.app/' : 'http://localhost:9000/'
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${redirectUrl}?confirmed=true`,
         data: {
-          firstName: firstName || '',
-          lastName: lastName || '',
-          role: role || 'admin',
+          role,
+          firstName,
+          lastName,
         },
       },
     })
 
-    console.log('🟢 register → data:', data)
-    console.log('🔴 register → error:', error)
+    if (error) {
+      console.error('❌ register error:', error)
+      throw error
+    }
 
-    if (error) throw error
     return true
   }
 
-  // ✅ FETCH USER
+  // ✅ Chargement du user
   async function fetchUser() {
     isLoading.value = true
     const { data, error } = await supabase.auth.getUser()
-    console.log('🟡 fetchUser → data:', data)
-    console.log('🔴 fetchUser → error:', error)
     isLoading.value = false
 
     if (error) {
@@ -59,15 +63,32 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     user.value = data?.user || null
+
+    // 🔧 Patch si pas de rôle (cas confirmation email)
+    if (user.value && !user.value.user_metadata?.role) {
+      await updateUserRole('admin')
+    }
   }
 
-  // ✅ LOGOUT
+  // ✅ Forcer une mise à jour du rôle
+  async function updateUserRole(role = 'admin') {
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        role,
+      },
+    })
+
+    if (error) throw error
+    user.value = data.user
+  }
+
+  // ✅ Déconnexion
   async function logout() {
     await supabase.auth.signOut()
     user.value = null
   }
 
-  // ✅ ROLES UTILS
+  // ✅ Utilitaires de rôle
   function isAdmin() {
     return user.value?.user_metadata?.role === 'admin'
   }
@@ -85,5 +106,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     isAdmin,
     hasRole,
+    updateUserRole,
   }
 })

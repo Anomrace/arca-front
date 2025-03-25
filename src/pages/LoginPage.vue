@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <q-card class="auth bg-primary text-white q-pa-lg">
+    <q-card class="auth bg-primary text-white q-pa-lg" style="min-width: 360px">
       <q-card-section>
         <ToolbarTitle />
       </q-card-section>
@@ -14,7 +14,6 @@
 
       <q-card-section>
         <q-form @submit.prevent="submitForm">
-          <!-- Email -->
           <q-input
             v-model="credentials.email"
             class="q-mb-md"
@@ -24,8 +23,6 @@
             type="email"
             autocomplete="email"
           />
-
-          <!-- Mot de passe -->
           <q-input
             v-model="credentials.password"
             class="q-mb-md"
@@ -36,7 +33,6 @@
             autocomplete="current-password"
           />
 
-          <!-- Prénom / Nom (si inscription) -->
           <q-input
             v-if="tab === 'register'"
             v-model="credentials.firstName"
@@ -55,6 +51,7 @@
           />
 
           <q-btn
+            :loading="isSubmitting"
             type="submit"
             class="full-width"
             no-caps
@@ -70,17 +67,17 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Dialog } from 'quasar'
-import { useRoute } from 'vue-router'
 import ToolbarTitle from 'src/components/ToolbarTitle.vue'
 import { useAuthStore } from 'src/stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
-
 const route = useRoute()
+
 const tab = ref('login')
+const isSubmitting = ref(false)
 
 const submitButtonTitle = computed(() => (tab.value === 'login' ? 'Se connecter' : "S'enregistrer"))
 
@@ -92,25 +89,19 @@ const credentials = reactive({
 })
 
 const submitForm = async () => {
-  if (!credentials.email || !credentials.password) {
-    return Dialog.create({
-      type: 'negative',
-      title: 'Erreur',
-      message: 'Email et mot de passe requis',
-    })
-  }
+  if (isSubmitting.value) return
+  isSubmitting.value = true
 
   try {
+    if (!credentials.email || !credentials.password) {
+      throw new Error('Email et mot de passe requis')
+    }
+
     if (tab.value === 'register') {
       if (!credentials.firstName || !credentials.lastName) {
-        return Dialog.create({
-          type: 'negative',
-          title: 'Erreur',
-          message: 'Prénom et nom requis pour vous enregistrer',
-        })
+        throw new Error('Prénom et nom requis pour vous enregistrer')
       }
 
-      // ✅ Inscription : ne pas tenter de rediriger, l'utilisateur n’est pas encore connecté
       await auth.register({
         email: credentials.email,
         password: credentials.password,
@@ -119,12 +110,12 @@ const submitForm = async () => {
         role: 'admin',
       })
 
-      return Dialog.create({
+      Dialog.create({
         type: 'info',
-        title: 'Confirmation requise',
-        message:
-          'Un email de confirmation a été envoyé. Veuillez vérifier votre boîte de réception.',
+        title: 'Inscription réussie',
+        message: 'Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail.',
       })
+      return
     }
 
     // ✅ Connexion
@@ -133,17 +124,11 @@ const submitForm = async () => {
       password: credentials.password,
     })
 
-    if (!success) {
-      throw new Error('Échec de connexion')
+    if (!success || !auth.user) {
+      throw new Error('Échec de connexion ou utilisateur introuvable')
     }
 
-    await auth.fetchUser()
-
-    if (!auth.user) {
-      throw new Error('Utilisateur introuvable après connexion')
-    }
-
-    const role = auth.user?.user_metadata?.role || 'student'
+    const role = auth.user.user_metadata?.role || 'student'
 
     const redirectByRole = {
       admin: '/dashboard-admin',
@@ -152,48 +137,35 @@ const submitForm = async () => {
       parent: '/dashboard-parent',
     }
 
-    const path = redirectByRole[role] || '/'
-    console.log('🔁 redirection vers', path)
-
     Dialog.create({
       type: 'positive',
-      title: 'Succès',
-      message: 'Connexion réussie',
+      title: 'Connexion réussie',
+      message: `Bienvenue, redirection vers votre tableau de bord (${role})`,
     })
 
+    const path = redirectByRole[role] || '/'
     router.push(path)
   } catch (err) {
     Dialog.create({
       type: 'negative',
       title: 'Erreur',
-      message: err?.message || 'Erreur de connexion',
+      message: err.message || 'Erreur de connexion',
     })
+  } finally {
+    isSubmitting.value = false
   }
 }
 
-onMounted(
-  async () => {
-    if (route.query.confirmed === 'true') {
-      await auth.fetchUser()
+onMounted(async () => {
+  if (route.query.confirmed === 'true') {
+    await auth.fetchUser()
 
-      Dialog.create({
-        type: 'positive',
-        title: 'Email confirmé',
-        message:
-          'Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.',
-      })
-    }
-  },
-
-  () => {
-    if (route.query.confirmed === 'true') {
-      Dialog.create({
-        type: 'positive',
-        title: 'Email confirmé',
-        message:
-          'Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.',
-      })
-    }
-  },
-)
+    Dialog.create({
+      type: 'positive',
+      title: 'Email confirmé',
+      message:
+        'Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.',
+    })
+  }
+})
 </script>
