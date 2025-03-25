@@ -7,6 +7,7 @@ import {
 } from 'vue-router'
 import routes from './routes'
 import { useAuthStore } from 'src/stores/auth'
+import { supabase } from 'src/boot/supabase'
 
 /*
  * If not building with SSR mode, you can
@@ -35,40 +36,43 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   })
   // Guard global
   Router.beforeEach(async (to, from, next) => {
-    const token = localStorage.getItem('token')
     const auth = useAuthStore()
 
-    // 1. Redirection vers /auth si la route est protégée et qu'on n'a pas de token
-    if (to.meta.requiresAuth && !token) {
-      return next('/auth')
+    console.log('🔍 Route demandée :', to.fullPath)
+
+    // Vérifie la session (automatiquement stockée par supabase)
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      // 🔐 Pas connecté → accès à une page protégée ?
+      if (to.meta.requiresAuth) return next('/auth')
     }
 
-    // 2. Si token existe mais user pas encore défini dans le store, on le fetch
-    if (token && !auth.user) {
+    // Si connecté mais pas encore chargé dans le store
+    if (session && !auth.user) {
       try {
         await auth.fetchUser()
+        console.log('👤 Rôle après fetch :', auth.user?.user_metadata?.role)
       } catch (err) {
         console.error('❌ Erreur fetch user :', err)
-        auth.logout() // au cas où le token est expiré
+        await auth.logout()
         return next('/auth')
       }
     }
 
-    // 3. Empêcher d'accéder à /auth ou /login si on est déjà connecté
-    // if (to.path.startsWith('/auth') && auth.user) {
-    //   return next(`/dashboard-${auth.user.role || 'student'}`)
-    // }
+    // Si déjà connecté et essaie d’aller sur /auth → redirige vers dashboard
     if (to.path.startsWith('/auth') && auth.user) {
-      const role = auth.user.user_metadata?.role || 'student'
+      const role = auth.user?.user_metadata?.role || 'student'
       return next(`/dashboard-${role}`)
     }
 
-    // 4. Vérification des rôles si la route en exige
+    // Si la route demande un rôle spécifique
     if (to.meta.roles && !to.meta.roles.includes(auth.user?.user_metadata?.role)) {
       return next('/unauthorized')
     }
 
-    // ✅ OK, accès autorisé
     next()
   })
 

@@ -9,7 +9,6 @@ const routes = [
         path: '',
         component: () => import('pages/dashboard/AdminDashboard.vue'),
       },
-      // ... autres routes enfants
     ],
   },
 
